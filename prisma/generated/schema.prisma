@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:1111@localhost:5432/avtoservice"
+}
+
+model User {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+
+  role UserRoles @default(USER)
+
+  cart Cart?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  orders Order[]
+  Sale   Sale[]
+}
+
+model Cart {
+  id            String     @id @default(uuid())
+  userId        String     @unique
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items         CartItem[]
+  totalQuantity Int        @default(0)
+  totalPrice    Float      @default(0.0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  price     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+}
+
+model Product {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int?
+  img         String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  CartItem    CartItem[]
+  saleId      String?
+  SaleItem    SaleItem[]
+}
+
+model Order {
+  id     String  @id @default(uuid())
+  User   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  name      String
+  number    String
+  status    String
+  visitDate DateTime
+  type      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Sale {
+  id         String     @id @default(uuid())
+  User       User       @relation(fields: [userId], references: [id])
+  userId     String
+  SaleItems  SaleItem[]
+  totalCoast Int
+  status     SaleStatus @default(PROCESSING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model SaleItem {
+  id          String  @id @default(uuid())
+  saleId      String
+  Sale        Sale    @relation(fields: [saleId], references: [id])
+  productId   String
+  Product     Product @relation(fields: [productId], references: [id])
+  priceAtSale Float
+  quantity    Int
+}
+
+enum UserRoles {
+  USER
+  ADMIN
+}
+
+enum SaleStatus {
+  PROCESSING
+  PAID
+  COMPLETED
+  CANCELED
+}

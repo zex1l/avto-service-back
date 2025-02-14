@@ -16,6 +16,9 @@ async function bootstrap() {
 
   const config = app.get(ConfigService);
   const redis = new IORedis(config.getOrThrow<string>('REDIS_URI'));
+  const allowedOrigins = config
+    .getOrThrow<string>('ALLOWED_ORIGIN')
+    ?.split(',');
 
   // Подлючение куки
   app.use(cookieParser(config.getOrThrow('COOKIE_SECRET')));
@@ -28,7 +31,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: config.getOrThrow('ALLOWED_ORIGIN'),
+    origin: allowedOrigins,
     credentials: true,
     // exposedHeaders: ['set-cookie'],
   });

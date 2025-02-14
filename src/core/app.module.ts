@@ -8,11 +8,13 @@ import { FilesModule } from 'src/modules/files/files.module';
 import { ProductModule } from 'src/modules/product/product.module';
 import { CartModule } from 'src/modules/cart/cart.module';
 import { SaleModule } from 'src/modules/sale/sale.module';
+import { IS_DEV_ENV } from 'src/libs/utils/isDev';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      ignoreEnvFile: !IS_DEV_ENV,
     }),
     PrismaModule,
     AuthModule,

@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:1111@localhost:5432/avtoservice"
+  url      = env("POSTGRES_URI")
 }
 
 model User {

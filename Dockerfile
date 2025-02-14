@@ -26,7 +26,7 @@ WORKDIR /app
 
 COPY --from=build /app/package*.json ./
 
-RUN npm install --production --frozen-lockfile
+RUN npm install --production
 
 COPY --from=build /app/dist ./dist
 

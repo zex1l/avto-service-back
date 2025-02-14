@@ -13,7 +13,9 @@ export class UserService {
       },
     });
 
-    if (!user) throw new NotFoundException('Пользователь не найден');
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
 
     return user;
   }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/core/prisma/prisma.service';
 import { ProductDto } from '../product/dto/product.dto';
 import { SaleDto } from './dto/sale.dto';
@@ -8,6 +8,9 @@ export class SaleService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async createSale(userId: string, products: SaleDto[], totalCost: number) {
+
+    if(!products.length) throw new BadRequestException('Не указан товар')
+
     const isUserExist = await this.prismaService.user.findUnique({
       where: {
         id: userId,

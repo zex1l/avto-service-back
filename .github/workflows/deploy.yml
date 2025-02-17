@@ -45,7 +45,7 @@ jobs:
 
 
           # Разворачиваем приложение через SSH
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r ./dist/* $SERVER_USER@$SERVER_HOST <<EOF
+          ssh -o StrictHostKeyChecking=no ~/.ssh/id_rsa $SERVER_USER@$SERVER_HOST <<EOF
             docker-compose down
             docker-compose up -d --build
           EOF

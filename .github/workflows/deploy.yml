@@ -27,6 +27,13 @@ jobs:
         run: |
           docker build -t your_image_name:${{ github.sha }} .
 
+      # Шаг 4: Добавление сервера в known_hosts (если необходимо)
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      # Шаг 5: Развертывание на сервере через SSH
       - name: Deploy to Server
         env:
           SERVER_USER: ${{ secrets.SERVER_USER }}
@@ -37,8 +44,12 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+          # Запуск ssh-agent и добавление ключа
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_rsa
+
           # Разворачиваем приложение через SSH
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST <<EOF
+          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST <<EOF
             cd /path/to/your/project
             docker-compose down
             docker-compose up -d --build

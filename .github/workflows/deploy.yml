@@ -41,16 +41,11 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 
-          # Запуск ssh-agent и добавление ключа
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/id_rsa
 
           # Разворачиваем приложение через SSH
-          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST <<EOF
-            cd /path/to/your/project
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r ./dist/* $SERVER_USER@$SERVER_HOST <<EOF
             docker-compose down
             docker-compose up -d --build
           EOF

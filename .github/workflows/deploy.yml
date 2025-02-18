@@ -1,51 +1,54 @@
-name: Deploy
+ame: Deploy NestJS to Remote Server
 
 on:
   push:
     branches:
-      - master
+      - main # или другая ветка, откуда деплоить
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Docker buildX
-        uses: docker/setup-buildx-action@v2
-
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Build Docker image
         run: |
-          docker build -t your_image_name:${{ github.sha }} .
+          docker build -t my-nestjs-app .
 
-      # Шаг 4: Добавление сервера в known_hosts (если необходимо)
-      - name: Add server to known_hosts
+      - name: Save Docker image as tar
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          docker save my-nestjs-app -o my-nestjs-app.tar
 
-      # Шаг 5: Развертывание на сервере через SSH
-      - name: Deploy to Server
-        env:
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+      - name: Copy Docker image to server via SCP
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          source: 'my-nestjs-app.tar'
+          target: '/home/${{ secrets.REMOTE_USER }}/app/'
 
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: SSH into remote server and deploy
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.REMOTE_USER }}/app/
 
-          # Разворачиваем приложение через SSH
-          ssh -o StrictHostKeyChecking=no ~/.ssh/id_rsa $SERVER_USER@$SERVER_HOST <<EOF
-            docker-compose down
-            docker-compose up -d --build
-          EOF
+            # Загружаем образ в Docker
+            docker load -i my-nestjs-app.tar
+
+            # Останавливаем и удаляем старый контейнер
+            docker compose down
+
+            # Запускаем новый контейнер
+            docker compose up -d
+

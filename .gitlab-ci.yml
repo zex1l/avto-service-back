@@ -1,0 +1,46 @@
+stages:
+  - deploy_prod
+
+build:
+  stage: deploy_prod
+  only:
+    refs:
+      - master
+  image: docker:20.10.16
+  services:
+    - name: docker:20.10.16-dind
+      alias: thedockerhost
+  variables:
+    DOCKER_HOST: tcp://thedockerhost:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker info
+
+    - docker compose -f compose.yml build app
+    - docker tag app $CI_REGISTRY_IMAGE/app:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE/app:$CI_COMMIT_SHORT_SHA
+
+api.zexcoder.ru:
+  image: node:20.5
+  stage: deploy_prod
+  only:
+    refs:
+      - master
+  needs:
+    - build
+  variables:
+    # site DOCUMENT_ROOT path
+    DOCUMENT_ROOT: '/opt/apps/back'
+  before_script:
+    - echo "nameserver 8.8.8.8" > /etc/resolv.conf
+    - apt-get update
+    - apt-get install sshpass
+  script:
+    - sshpass -p $PROD_SSH_PASS ssh -o 'StrictHostKeyChecking=no' $PROD_SSH_USER@$PROD_HOST_IP -p $PROD_SSH_PORT "
+      cd $DOCUMENT_ROOT &&
+      docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
+      export COMMIT_SHA=$CI_COMMIT_SHORT_SHA &&
+      docker compose -f compose.production.yml up -d"
+  when: manual

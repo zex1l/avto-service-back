@@ -1,4 +1,4 @@
-ame: Deploy NestJS to Remote Server
+name: Deploy NestJS to Remote Server
 
 on:
   push:

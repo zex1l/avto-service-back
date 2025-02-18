@@ -3,7 +3,7 @@ name: Deploy NestJS to Remote Server
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build:

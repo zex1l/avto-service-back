@@ -1,0 +1,53 @@
+ame: Deploy NestJS to Remote Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t my-nestjs-app .
+
+      - name: Save Docker image as tar
+        run: |
+          docker save my-nestjs-app -o my-nestjs-app.tar
+
+      - name: Copy Docker image to server via SCP
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          source: 'my-nestjs-app.tar'
+          target: '/home/${{ secrets.REMOTE_USER }}/app/'
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: SSH into remote server and deploy
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.REMOTE_USER }}/app/
+
+            # Загружаем образ в Docker
+            docker load -i my-nestjs-app.tar
+
+            # Останавливаем и удаляем старый контейнер
+            docker compose down
+
+            # Запускаем новый контейнер
+            docker compose up -d

@@ -51,3 +51,4 @@ jobs:
 
             # Запускаем новый контейнер
             docker compose up -d
+

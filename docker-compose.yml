@@ -1,6 +1,42 @@
 version: '3.7'
 
 services:
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    container_name: caddy-proxy
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - CADDY_INGRESS_NETWORKS=caddy
+    networks:
+      - caddy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - caddy_data:/data
+    restart: unless-stopped
+
+  app:
+    container_name: nest-avtoservice
+    build: .
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASE_URL=postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    labels:
+      caddy: api.zexcoder.ru
+      caddy.reverse_proxy: '{{upstreams 4200}}'
+    networks:
+      - caddy
+      - avto-service
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
   db:
     container_name: postgres-avtoservice
     image: postgres:15.2
@@ -13,6 +49,7 @@ services:
       - postgres_data:/var/lib/postgresql/postgres_data
     networks:
       - avto-service
+
   redis:
     container_name: redis-avtoservice
     image: redis:5.0
@@ -28,6 +65,9 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  caddy_data:
 
 networks:
   avto-service:
+  caddy:
+    external: true

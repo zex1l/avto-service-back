@@ -5,6 +5,7 @@ on:
     branches:
       - main
 
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -51,3 +52,7 @@ jobs:
 
             # Запускаем новый контейнер
             docker compose up -d
+<<<<<<< HEAD
+=======
+
+>>>>>>> 36ee7d9a704943f27e9927588a3c190017f7714d

@@ -1,28 +1,6 @@
 version: '3.7'
 
 services:
-  app:
-    container_name: nest-avtoservice
-    build: .
-    image: app:latest
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - DATABASE_URL=postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@db:5432/postgres
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379PROD_SSH_PORT
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    labels:
-      caddy: api.zexcoder.ru
-      caddy.reverse_proxy: '{{upstreams 4200}}'
-    networks:
-      - caddy
-      - avto-service
-    depends_on:
-      - db
-      - redis
-    restart: unless-stopped
-
   db:
     container_name: postgres-avtoservice
     image: postgres:15.2
@@ -51,9 +29,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  caddy_data:
 
 networks:
   avto-service:
-  caddy:
-    external: true

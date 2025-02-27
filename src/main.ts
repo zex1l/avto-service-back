@@ -20,10 +20,10 @@ async function bootstrap() {
     .getOrThrow<string>('ALLOWED_ORIGIN')
     ?.split(',');
 
-  // Подлючение куки
+
   app.use(cookieParser(config.getOrThrow('COOKIE_SECRET')));
 
-  // Подлючение валидации
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
